@@ -1,36 +1,61 @@
-import React from "react";
+import React, { useState, FormEvent } from "react";
+import api from "../../services/api";
 import { FiChevronRight} from 'react-icons/fi';
 
 import logoImg from '../../assets/logo.svg'
 
 import { Title, Form, Repositories } from './style';
 
+interface Repository {
+    full_name: string;
+    description: string;
+    owner: {
+        login: string;
+        avatar_url: string;
+    }
+}
+
 const Dashboard: React.FC = () => {
+    const [newRepo, setNewRepo] = useState('');
+    const [repositories, setRepositories] = useState<Repository[]>([]);
+
+    async function handleAddRepository(e: FormEvent<HTMLFormElement>): Promise<void> {
+        e.preventDefault();
+        const response = await api.get<Repository>(`repos/${newRepo}`);
+
+        const repository = response.data;
+        setRepositories([...repositories, repository]);
+        setNewRepo('');
+    }
+
     return (
         <>
             <img src={logoImg} alt="Github Explorer" />
             <Title>Explore Github repositories</Title>
 
-            <Form>
-                <input placeholder="Repository name"/>
+            <Form onSubmit={handleAddRepository}>
+                <input required
+                    value={newRepo}
+                    onChange={event => setNewRepo(event.target.value)}
+                    placeholder="Repository name"
+                />
                 <button>Search</button>
             </Form>
 
             <Repositories>
-                <a href={'teste'}>
-                    <img src={"https://avatars1.githubusercontent.com/u/4540077?s=460&u=4e7985f5148e78182f8b8184f70d928d6e225b60&v=4"}
-                         alt={"André"}/>
-                    <div>
-                        <strong>
-                            BurgerBuilder
-                        </strong>
-                        <p>
-                            Burger builder App
-                        </p>
-                    </div>
+                {repositories.map(repository => (
+                    <a key={repository.full_name} href={'teste'}>
+                        <img src={repository.owner.avatar_url}
+                             alt={repository.owner.login}/>
 
-                    <FiChevronRight size={20} />
-                </a>
+                        <div>
+                            <strong>{repository.full_name}</strong>
+                            <p>{repository.description}</p>
+                        </div>
+
+                        <FiChevronRight size={20} />
+                    </a>
+                ))}
             </Repositories>
         </>
     );
